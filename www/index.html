@@ -167,7 +167,8 @@
 </style>
 </head>
 <body>
-    <div class="main">\n        <div class="wallet">SỐ DƯ: <span id="wallet">10.000.000</span> xu</div>
+    <div class="main">
+        <div class="wallet">SỐ DƯ: <span id="wallet">10.000.000</span> xu</div>
         <div id="dragon" class="dragon"></div>
         <div class="khung"></div>
         <div id="time" class="time"></div>
@@ -261,7 +262,11 @@ gameStart();
 
 var socket = io();
 
-socket.on('wallet', function (data) {\n    document.getElementById('wallet').innerHTML = Number(data.balance).toLocaleString('vi-VN');\n});\n\nsocket.on('gameData', function (data) {
+socket.on('wallet', function (data) {
+    document.getElementById('wallet').innerHTML = Number(data.balance).toLocaleString('vi-VN');
+});
+
+socket.on('gameData', function (data) {
     idGame.innerHTML         = '#' + data.idGame;
     soNguoiChonTai.innerHTML = data.soNguoiChonTai;
     soNguoiChonXiu.innerHTML = data.soNguoiChonXiu;
