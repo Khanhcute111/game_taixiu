@@ -1,327 +1,65 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="vi">
 <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Game Tài Xỉu Online</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" media="screen" href="" />
-    <script src=""></script>
-    <style>
-    body{
-        background: #7b00b4;
-    }
-
-    .wallet { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: 5; color: #fff; font: bold 18px Arial; background: rgba(0,0,0,.55); padding: 9px 16px; border: 1px solid #ffd700; border-radius: 20px; white-space: nowrap; }
-    .main {
-        background: url('imgs/img.png') no-repeat -1150px -2px;
-        width: 771px;
-        height: 507px;
-        margin:auto;
-        position: relative;
-        text-align: center;
-    }
-    .xiu {
-        background: url('imgs/img.png') no-repeat -343px -867px;
-        width: 130px;
-        height: 74px;
-        position: absolute;
-        left: 98px;
-        top: 190px;
-        animation: zoomout 0.2s ease-in-out infinite alternate;
-    }
-    .tai {
-        background: url('imgs/img.png') no-repeat -1290px -870px;
-        width: 108px;
-        height: 68px;
-        position: absolute;
-        right: 98px;
-        top: 190px;
-        animation: zoomout 0.2s ease-in-out infinite alternate;
-    }
-    .user {
-        background: url('imgs/img.png') no-repeat -1970px -416px;
-        width: 26px;
-        height: 34px;
-        position: absolute;
-        right: 200px;
-        top: 380px;
-    }
-    .dragon {
-        background: url('imgs/img.png') no-repeat -1538px -514px;
-        width: 317px;
-        height: 309px;
-        position: absolute;
-        left: 230px;
-        top: 130px;
-        animation: spin 5s linear infinite;
-    }
-    .input{
-        width: 200px;
-        height: 60px;
-        border-radius: 50px;
-        position: absolute;
-        left: 45px;
-        top: 305px;
-        outline: 0;
-        text-align: center;
-        font-size: 30px;
-        background: 0;
-        border: 0;
-        color : #fff;
-    }
-
-    .txt{
-        padding-top: 410px;
-        text-align: center;
-        top: 300px;
-    }
-    .statustxt{
-        font-size: 25px;
-        font-weight: bold;
-        font-family: "Segoe UI";
-        top: 500px;
-        text-shadow: 0 0 3px #000;
-        color: yellow;
-        transition: 0.5s;
-        opacity: 0;
-    }
-    .usertxt{
-        font-size: 25px;
-        font-weight: bold;
-        font-family: "Segoe UI";
-        top: 500px;
-        text-shadow: 0 0 3px #000;
-        color: white;
-    }
-    .dice{
-        position: absolute;
-    }
-    .dice1{
-        background: url('imgs/dice.png') no-repeat -507px -2px;
-        width: 98px;
-        height: 96px;
-        transform: scale(0.8) rotate(-20deg);
-        left: 340px;
-        top: 200px;
-        opacity: 0;
-    }
-    .dice2{
-        background: url('imgs/dice.png') no-repeat -404px -3px;
-        width: 98px;
-        height: 96px;
-        transform: scale(0.8) rotate(20deg);
-        left: 300px;
-        top: 270px;
-        opacity: 0;
-    }
-    .dice3{
-        background: url('imgs/dice.png') no-repeat 0 -2px;
-        width: 98px;
-        height: 96px;
-        transform: scale(0.8) rotate(10deg);
-        left: 380px;
-        top: 270px;
-        opacity: 0;
-    }
-    .khung {
-        background: url('imgs/img.png') no-repeat -1107px -828px;
-        width: 179px;
-        height: 45px;
-        transform: scale(0.6);
-        position: absolute;
-        left: 120px;
-        top: 135px;
-    }
-    .time{
-        font-size: 100px;
-        font-family: 'Intro', sans-serif;
-        font-weight: 800;
-        text-transform: uppercase;
-        /* Warning: no fallback */
-        
-        background: -webkit-linear-gradient(-86deg, #660610 5%, black 53%, #0A99B8 91%);
-        -webkit-background-clip: text;
-        -webkit-text-stroke: 8px transparent;
-        color: white;
-        position: absolute;
-        left: 320px;
-        top: 200px;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    @keyframes zoomout {
-        0% {
-            transform: scale(1.0);
-        }
-        100% {
-            transform: scale(1.2);
-        }
-    }
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-    }
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#090d1b"><title>NEON PLAY · Tài Xỉu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#090d1b;--panel:#111a2e;--panel2:#17233b;--line:#263653;--muted:#8fa2c2;--text:#f5f7ff;--gold:#ffd166;--cyan:#42e8d2;--pink:#ff668f;--green:#48e0a4}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#243c70 0,transparent 55%),var(--bg);color:var(--text);font-family:'Be Vietnam Pro',Arial,sans-serif;min-height:100vh}
+.wrap{width:min(1120px,100%);margin:auto;padding:18px 16px 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:11px;font-weight:900;letter-spacing:1px}.logo{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#ffe08a,#ff9e43);color:#182039;font-size:22px;box-shadow:0 6px 24px #ffb54744}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:2px;font-weight:700}.wallet{display:flex;align-items:center;gap:12px;background:#141f35;border:1px solid #394968;border-radius:16px;padding:9px 12px}.wallet small{display:block;color:var(--muted);font-size:10px}.balance{font-size:16px;font-weight:900;color:var(--gold)}button{font:inherit;cursor:pointer;border:0}.topup{background:linear-gradient(135deg,#ffe18b,#ffb443);color:#242035;font-weight:900;border-radius:10px;padding:9px 12px;font-size:12px}
+.hero{display:grid;grid-template-columns:1.45fr .85fr;gap:16px}.panel{background:linear-gradient(145deg,#17243c,#10182a);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 50px #0003}.game{padding:22px;position:relative;overflow:hidden}.game:before{content:"";position:absolute;width:280px;height:280px;border-radius:50%;background:#ffd16612;filter:blur(30px);top:-140px;left:calc(50% - 140px)}.eyebrow{color:var(--muted);font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase}.roundline{display:flex;justify-content:space-between;align-items:center;position:relative}.live{color:var(--green);font-size:11px;font-weight:800}.live:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:7px;box-shadow:0 0 12px var(--green)}.timer{font-size:52px;line-height:1.1;text-align:center;font-weight:900;letter-spacing:2px;color:var(--gold);text-shadow:0 0 28px #ffc85755;margin:18px 0 4px}.timer.lock{color:var(--pink)}.sub{text-align:center;color:var(--muted);font-size:11px}.dicebox{display:flex;justify-content:center;gap:13px;margin:24px 0 25px;min-height:76px}.die{width:67px;height:67px;border-radius:17px;background:linear-gradient(145deg,#fff,#dce5f4);color:#17233b;display:grid;place-items:center;font-size:35px;font-weight:900;box-shadow:0 8px 0 #aab8cc,0 14px 22px #0005;animation:float 2s ease-in-out infinite}.die:nth-child(2){animation-delay:.2s}.die:nth-child(3){animation-delay:.4s}@keyframes float{50%{transform:translateY(-5px) rotate(3deg)}}.result{text-align:center;font-size:13px;color:var(--gold);font-weight:800;min-height:20px}.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px}.side{border-radius:17px;padding:15px 14px;border:1px solid #ffffff16;position:relative;overflow:hidden}.side.tai{background:linear-gradient(135deg,#58294c,#2b203e)}.side.xiu{background:linear-gradient(135deg,#164b5a,#182b49)}.side h2{font-size:23px;margin:0 0 5px;font-weight:900}.tai h2{color:#ff9bb2}.xiu h2{color:#68e9ed}.side .total{font-size:15px;font-weight:800}.side .count{font-size:10px;color:#c3cce0;margin-top:4px}.bar{height:5px;background:#ffffff20;border-radius:8px;margin-top:12px;overflow:hidden}.bar span{height:100%;display:block;width:50%;background:var(--pink);border-radius:8px;transition:width .35s}.xiu .bar span{background:var(--cyan)}
+.right{padding:20px}.right h3,.sectionhead{font-size:14px;margin:0 0 14px;font-weight:900}.betamount{width:100%;padding:14px 13px;background:#0b1324;border:1px solid #344665;border-radius:13px;color:white;font-size:18px;font-weight:800;outline:none}.betamount:focus{border-color:var(--gold)}.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0 15px}.quick button{background:#202e49;color:#cbd7ec;border:1px solid #334766;padding:9px 4px;border-radius:9px;font-size:11px;font-weight:800}.quick button:active{transform:scale(.97)}.betbtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}.betbtn{padding:13px 5px;border-radius:12px;font-weight:900;font-size:14px;color:#101a2b}.betbtn.t{background:linear-gradient(135deg,#ff9bb2,#ff668f)}.betbtn.x{background:linear-gradient(135deg,#72f0e7,#36c7d4)}.hint{font-size:10px;color:var(--muted);line-height:1.6;margin-top:13px}
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:16px}.section{padding:19px}.sectionhead{display:flex;justify-content:space-between;align-items:center}.tag{font-size:9px;color:var(--gold);background:#ffd16618;border:1px solid #ffd16633;padding:5px 8px;border-radius:30px}.feed,.history,.results{display:flex;flex-direction:column;gap:8px}.feedrow,.histrow,.resultrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0c1527;border:1px solid #202f49;padding:10px 11px;border-radius:11px;font-size:11px}.feedname{display:flex;align-items:center;gap:8px}.avatar{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#435b83,#263955);display:grid;place-items:center;font-weight:900;color:#fff}.sidepill{font-size:9px;font-weight:900;padding:4px 7px;border-radius:6px}.pill-tai{color:#ff9bb2;background:#ff668f18}.pill-xiu{color:#68e9ed;background:#42e8d218}.money{font-weight:900;color:#eaf0ff}.muted{color:var(--muted)}.empty{color:var(--muted);font-size:11px;text-align:center;padding:18px}.tabs{display:flex;gap:7px}.tab{padding:6px 9px;border-radius:8px;background:#202e49;color:#aebbd1;font-size:10px;font-weight:800}.tab.active{background:#ffd166;color:#1b2334}.notice{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#f7f0d6;color:#1a2335;padding:12px 18px;border-radius:12px;font-size:12px;font-weight:900;box-shadow:0 12px 35px #0007;transition:.25s;z-index:10}.notice.show{opacity:1;transform:translate(-50%,0)}.foot{text-align:center;color:#647796;font-size:10px;margin-top:20px}
+@media(max-width:760px){.wrap{padding:12px 11px 28px}.hero,.grid2{grid-template-columns:1fr}.top{align-items:flex-start}.brand{font-size:13px}.wallet{gap:8px;padding:8px}.balance{font-size:13px}.topup{padding:8px;font-size:10px}.game{padding:17px}.right{padding:17px}.timer{font-size:45px}.die{width:60px;height:60px;font-size:31px}.section{padding:15px}}
 </style>
 </head>
-<body>
-    <div class="main">
-        <div class="wallet">SỐ DƯ: <span id="wallet">10.000.000</span> xu</div>
-        <div id="dragon" class="dragon"></div>
-        <div class="khung"></div>
-        <div id="time" class="time"></div>
-        <p id="id" class="statustxt" style="position: absolute; opacity : 1; left: 180px;top: 130px; font-size: 17px"></p>
-        <div id="taitxt" class="tai"></div>
-        <div id="xiutxt" class="xiu"></div>
-        <p id="sumxiu" class="usertxt" style="position: absolute; left: 115px;top: 242px;"></p>
-        <p id="sumtai" class="usertxt" style="position: absolute; right: 130px;top: 242px;"></p>
-        <div id="dice1" class="dice dice1"></div>
-        <div id="dice2" class="dice dice2"></div>
-        <div id="dice3" class="dice dice3"></div>
-        <div class="user"></div>
-        <div class="user" style="left: 80px;"></div>
-        <input id="pullxiu" class="input" type="number">
-        <input id="pulltai" class="input" type="number" style="left: 525px;">
-        <img src="" id="roll" style="position: absolute; left:300px; top: 190px; transition: 0.5s;opacity: 0; width: 180px"/>
-        <p id="userxiu" class="usertxt" style="position: absolute; left: 115px;top: 352px;"></p>
-        <p id="usertai" class="usertxt" style="position: absolute; right: 180px;top: 352px;"></p>
-        <div class="txt">
-            <p id="statustxt" class="statustxt"></p>
-        </div>
-        
-            
-    </div>
-</body>
-<script src="/socket.io/socket.io.js"></script>
-
-<script>
-
-d1 = document.getElementById("dice1");
-d2 = document.getElementById("dice2");
-d3 = document.getElementById("dice3");
-idGame = document.getElementById("id");
-soNguoiChonTai = document.getElementById("usertai");
-soNguoiChonXiu = document.getElementById("userxiu");
-tongTienDatTai = document.getElementById("sumtai");
-tongTienDatXiu = document.getElementById("sumxiu");
-time = document.getElementById("time");
-
-gameStart = function(){
-    time.style.opacity = 1;
-    d1.style.opacity = 0;
-    d2.style.opacity = 0;
-    d3.style.opacity = 0;
-    document.getElementById('dragon').style.webkitAnimationPlayState = 'running'; 
-    document.getElementById("taitxt").style.webkitAnimationPlayState = 'paused';
-    document.getElementById("xiutxt").style.webkitAnimationPlayState = 'paused'; 
-}
-gameOver = function(dice){
-    time.style.opacity = 0;
-    roll = document.getElementById("roll");
-    document.getElementById('dragon').style.webkitAnimationPlayState = 'paused'; 
-    roll.src = "";
-    roll.src = 'imgs/roll1.gif';
-    roll.style.opacity = 1;
-    setTimeout(()=>{
-        roll.style.opacity = 0;
-        showDice(dice.dice1,dice.dice2,dice.dice3);
-        document.getElementById(dice.result+"txt").style.webkitAnimationPlayState = 'running'; 
-    },2000);
-}
-
-showDice = function(dice1,dice2,dice3){
-    dice = {
-        1: '0 -2px',
-        2: '-103px -3px',
-        3: '-204px -3px',
-        4: '-305px -3px',
-        5: '-404px -3px',
-        6: '-507px -2px',
-    };
-    d1.style.background = "url('imgs/dice.png') no-repeat "+ dice[dice1];
-    d2.style.background = "url('imgs/dice.png') no-repeat "+ dice[dice2];
-    d3.style.background = "url('imgs/dice.png') no-repeat "+ dice[dice3];
-    d1.style.opacity = 1;
-    d2.style.opacity = 1;
-    d3.style.opacity = 1;
-
-}
-
-showStt = function(msg,timeout = 3000){
-    statustxt = document.getElementById('statustxt');
-    statustxt.innerHTML = msg;
-    statustxt.style.opacity = 1;
-    setTimeout(()=>{
-        statustxt.style.opacity = 0;
-    },timeout);
-}
-
-gameStart();
-
-var socket = io();
-
-socket.on('wallet', function (data) {
-    document.getElementById('wallet').innerHTML = Number(data.balance).toLocaleString('vi-VN');
+<body><main class="wrap">
+<header class="top"><div class="brand"><div class="logo">♛</div><div>NEON PLAY<small>VIRTUAL TABLE · TÀI XỈU</small></div></div>
+<div class="wallet"><div><small>SỐ DƯ CỦA BẠN</small><div class="balance"><span id="balance">10.000.000</span> xu</div></div><button class="topup" id="topup">＋ NHẬN XU</button></div></header>
+<section class="hero">
+<div class="panel game"><div class="roundline"><span class="eyebrow">BÀN CHƠI TRỰC TUYẾN</span><span class="live">ĐANG HOẠT ĐỘNG</span></div>
+<div class="timer" id="timer">00:45</div><div class="sub" id="phase">ĐANG MỞ CƯỢC · PHIÊN #1</div>
+<div class="dicebox"><div class="die" id="d1">⚄</div><div class="die" id="d2">⚄</div><div class="die" id="d3">⚄</div></div><div class="result" id="result">Chúc bạn may mắn!</div>
+<div class="sides">
+<div class="side tai"><h2>TÀI</h2><div class="total" id="totalTai">0 xu</div><div class="count"><span id="countTai">0</span> người chơi thật · <span id="botTai">0</span> mô phỏng</div><div class="bar"><span id="barTai"></span></div></div>
+<div class="side xiu"><h2>XỈU</h2><div class="total" id="totalXiu">0 xu</div><div class="count"><span id="countXiu">0</span> người chơi thật · <span id="botXiu">0</span> mô phỏng</div><div class="bar"><span id="barXiu"></span></div></div>
+</div></div>
+<aside class="panel right"><h3>ĐẶT CƯỢC CỦA BẠN</h3><input id="amount" class="betamount" type="number" min="1000" step="1000" placeholder="Nhập số xu cược">
+<div class="quick"><button data-amount="50000">50K</button><button data-amount="100000">100K</button><button data-amount="500000">500K</button><button data-amount="1000000">1M</button><button data-amount="2000000">2M</button><button data-amount="5000000">5M</button></div>
+<div class="betbtns"><button class="betbtn t" id="betTai">ĐẶT TÀI</button><button class="betbtn x" id="betXiu">ĐẶT XỈU</button></div>
+<div class="hint">• Cược tối thiểu 1.000 xu ảo.<br>• Thắng nhận lại 2 lần tiền cược (gồm tiền gốc).<br>• Nhận xu miễn phí để trải nghiệm, không có nạp/rút tiền thật.</div>
+</aside></section>
+<section class="grid2">
+<div class="panel section"><div class="sectionhead">NGƯỜI CHƠI ĐANG CƯỢC <span class="tag">MÔ PHỎNG · LIVE</span></div><div id="feed" class="feed"><div class="empty">Đang chờ lượt cược...</div></div></div>
+<div class="panel section"><div class="sectionhead">LỊCH SỬ PHIÊN <span class="tag">KẾT QUẢ</span></div><div id="results" class="results"><div class="empty">Chưa có kết quả</div></div></div>
+</section>
+<section class="panel section" style="margin-top:16px"><div class="sectionhead">LỊCH SỬ GIAO DỊCH <span class="tag">TÀI KHOẢN NÀY</span></div><div id="history" class="history"><div class="empty">Chưa phát sinh giao dịch</div></div></section>
+<div class="foot">NEON PLAY · CHỈ SỬ DỤNG XU ẢO GIẢI TRÍ · NGƯỜI CHƠI MÔ PHỎNG KHÔNG PHẢI NGƯỜI DÙNG THẬT</div>
+</main><div class="notice" id="notice"></div>
+<script src="/socket.io/socket.io.js"></script><script>
+const socket=io();let balance=10000000,locked=false;
+const $=id=>document.getElementById(id);
+function money(n){return Number(n||0).toLocaleString('vi-VN')+' xu'}
+function toast(msg){$('notice').textContent=msg;$('notice').classList.add('show');setTimeout(()=>$('notice').classList.remove('show'),2600)}
+function place(side){const amount=Number($('amount').value);if(!Number.isSafeInteger(amount)||amount<1000){toast('Nhập mức cược tối thiểu 1.000 xu');return}if(locked){toast('Phiên đã khóa cược');return}socket.emit('pull',{dice:side,money:amount});}
+$('betTai').onclick=()=>place('tai');$('betXiu').onclick=()=>place('xiu');
+document.querySelectorAll('[data-amount]').forEach(b=>b.onclick=()=>{$('amount').value=b.dataset.amount});
+$('topup').onclick=()=>socket.emit('topup');
+socket.on('wallet',d=>{balance=d.balance;$('balance').textContent=money(balance).replace(' xu','')});
+socket.on('history',items=>{$('history').innerHTML=items.length?items.map(x=>'<div class="histrow"><div><b>'+x.type+'</b><div class="muted">'+x.detail+' · '+x.at+'</div></div><span class="money">+'+money(x.amount)+'</span></div>').join(''):'<div class="empty">Chưa phát sinh giao dịch</div>'});
+socket.on('notice',d=>toast(d.message));
+socket.on('pull',d=>toast(d.status==='success'?'Đặt cược thành công':d.error));
+socket.on('winGame',d=>toast(d.msg));
+socket.on('roundStart',d=>{locked=false;$('result').textContent='Chúc bạn may mắn!';$('phase').textContent='ĐANG MỞ CƯỢC · PHIÊN #'+d.round;});
+socket.on('gameOver',d=>{locked=true;['d1','d2','d3'].forEach((id,i)=>{$(id).textContent=['⚀','⚁','⚂','⚃','⚄','⚅'][d.dice[i]-1]});$('result').textContent='KẾT QUẢ: '+d.result.toUpperCase()+' · TỔNG '+d.total;});
+socket.on('gameData',d=>{
+ $('timer').textContent='00:'+String(d.time).padStart(2,'0');locked=d.phase!=='betting';$('timer').classList.toggle('lock',locked);
+ $('phase').textContent=(locked?'ĐANG CHỜ PHIÊN MỚI':'ĐANG MỞ CƯỢC')+' · PHIÊN #'+d.round;
+ $('totalTai').textContent=money(d.totalTai);$('totalXiu').textContent=money(d.totalXiu);
+ $('countTai').textContent=d.realTai;$('countXiu').textContent=d.realXiu;$('botTai').textContent=d.botTai;$('botXiu').textContent=d.botXiu;
+ const sum=d.totalTai+d.totalXiu||1;$('barTai').style.width=(d.totalTai/sum*100)+'%';$('barXiu').style.width=(d.totalXiu/sum*100)+'%';
+ $('feed').innerHTML=d.feed.length?d.feed.map(x=>'<div class="feedrow"><div class="feedname"><div class="avatar">'+x.name.charAt(0)+'</div><div><b>'+x.name+'</b><div class="muted">Người chơi mô phỏng</div></div></div><span class="sidepill '+(x.side==='tai'?'pill-tai':'pill-xiu')+'">'+x.side.toUpperCase()+'</span><span class="money">'+money(x.amount)+'</span></div>').join(''):'<div class="empty">Đang chờ lượt cược...</div>';
+ $('results').innerHTML=d.recent.length?d.recent.map(x=>'<div class="resultrow"><b>#'+x.round+'</b><span class="sidepill '+(x.result==='tai'?'pill-tai':'pill-xiu')+'">'+x.result.toUpperCase()+'</span><span class="muted">'+x.dice.join(' · ')+' = '+x.total+'</span></div>').join(''):'<div class="empty">Chưa có kết quả</div>';
 });
-
-socket.on('gameData', function (data) {
-    idGame.innerHTML         = '#' + data.idGame;
-    soNguoiChonTai.innerHTML = data.soNguoiChonTai;
-    soNguoiChonXiu.innerHTML = data.soNguoiChonXiu;
-    tongTienDatTai.innerHTML = data.tongTienDatTai/1000 +'k';
-    tongTienDatXiu.innerHTML = data.tongTienDatXiu/1000 +'k';
-    if(data.time.toString().length == 1){
-        time.innerHTML  = data.time == 0 ? '' : '0' + data.time;
-    }else{
-        time.innerHTML  = data.time;
-    }
-});
-
-socket.on('gameOver', function (data) {
-    gameOver(data);
-});
-
-socket.on('gameStart', function (data) {
-    gameStart();
-    showStt('Game bắt đầu');
-});
-
-socket.on('pull', function (data) {
-    if(data.status == 'success'){
-        showStt('Đặt cược thành công');
-    }else if(data.status == 'error'){
-        showStt(data.error);
-    }
-    
-});
-socket.on('winGame', function (data) {
-    showStt(data.msg,10000);
-});
-
-document.getElementById('pulltai').addEventListener("keyup", function(event) {
-    if (event.key === "Enter") {
-        socket.emit('pull',{
-            id : socket.id,
-            dice: 'tai',
-            money: Number(document.getElementById('pulltai').value)
-        })
-        document.getElementById('pulltai').value = '';
-    }
-});
-
-
-document.getElementById('pullxiu').addEventListener("keyup", function(event) {
-    if (event.key === "Enter") {
-        socket.emit('pull',{
-            id : socket.id,
-            dice: 'xiu',
-            money: Number(document.getElementById('pullxiu').value)
-        })
-        document.getElementById('pullxiu').value = '';
-    }
-});
-
-</script>
-</html>
+</script></body></html>
