@@ -28,6 +28,7 @@ var Taixiu = function(){
     this.idChonTai           = []; // array id chọn tài
     this.idChonXiu           = []; // array id chọn xỉu
     this.ketQua              = ''; // kết quá
+    this.wallets             = {}; // số dư xu ảo theo phiên kết nối
 
 
     // game bắt đầu
@@ -82,8 +83,11 @@ var Taixiu = function(){
         console.log(JSON.stringify(this.ketQua));
         idWin = this.ketQua.result == 'tai' ? seft.idChonTai : seft.idChonXiu;
         idWin.forEach((data)=>{
+            var payout = data.tien * 2; // trả lại cược + thưởng bằng tiền cược
+            seft.wallets[data.id] = (seft.wallets[data.id] || 0) + payout;
+            io.to(data.id).emit('wallet', { balance: seft.wallets[data.id] });
             io.to(data.id).emit('winGame', {
-                msg: 'Bạn đã thắng '+ data.tien + ' xu'
+                msg: 'Bạn thắng! Nhận ' + payout.toLocaleString('vi-VN') + ' xu'
             });
         });
         loopAGame = setInterval(function() {   
@@ -106,6 +110,14 @@ var Taixiu = function(){
     };
     // đặt cược
     this.putMoney = function(id,cau,tien){
+        tien = Number(tien);
+        if (!Number.isSafeInteger(tien) || tien <= 0 || (cau !== 'tai' && cau !== 'xiu')) {
+            return { status: 'error', error: 'Số xu cược không hợp lệ' };
+        }
+        if (this.wallets[id] === undefined) this.wallets[id] = 10000000;
+        if (tien > this.wallets[id]) {
+            return { status: 'error', error: 'Bạn không đủ xu để đặt cược' };
+        }
         // nếu đang trong thời gian chờ (coTheDatCuoc == false)
         if (this.coTheDatCuoc == false){
             return {
@@ -113,6 +125,8 @@ var Taixiu = function(){
                 error   : 'Không thể đặt, vui lòng chờ giây lát'
             };
         }
+        this.wallets[id] -= tien;
+        io.to(id).emit('wallet', { balance: this.wallets[id] });
         if(cau == 'tai'){
             // thêm tiền vào tổng số tiền đặt tài
             this.tongTienDatTai += tien;
@@ -167,6 +181,9 @@ var Taixiu = function(){
 tx = new Taixiu();
 
 io.on('connection', function (socket) {
+    tx.wallets[socket.id] = 10000000;
+    socket.emit('wallet', { balance: tx.wallets[socket.id] });
+    socket.on('disconnect', function () { delete tx.wallets[socket.id]; });
     socket.on('pull', function (data) {
         msg = tx.putMoney(data.id,data.dice,data.money);
         socket.emit('pull', msg);
