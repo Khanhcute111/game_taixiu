@@ -23,7 +23,7 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
         setContentView(webView);
-        webView.loadUrl("https://sharing-customs-mountains-tend.trycloudflare.com");
+        webView.loadUrl("https://game-taixiu-1-rqq4.onrender.com");
     }
 
     @Override
