@@ -1,188 +1,26 @@
-const express = require('express');
-const http = require('http');
-const path = require('path');
-const socketIo = require('socket.io');
-
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: '*' } });
-
-const WEB_DIR = path.join(__dirname, 'www');
-app.use(express.static(WEB_DIR));
-app.get('/health', (_req, res) => res.status(200).send('OK'));
-app.get('/', (_req, res) => res.sendFile(path.join(WEB_DIR, 'index.html')));
-
-const PORT = Number(process.env.PORT) || 3000;
-const START_BALANCE = 10000000;
-const TOPUP_AMOUNT = 500000;
-const ROUND_SECONDS = 45;
-const WAIT_SECONDS = 8;
-const names = ['Minh Anh','Hoàng Long','Gia Huy','Bảo Ngọc','Tuấn Kiệt','Khánh Linh','Đức Anh','Phương Thảo','Quốc Bảo','Hải Đăng','Ngọc Mai','Thanh Tùng','Kim Chi','Anh Khoa','Mỹ Duyên','Nhật Nam'];
-const amounts = [50000,100000,200000,300000,500000,800000,1000000,1500000,2000000];
-const wallets = new Map();
-const histories = new Map();
-let realBets = { tai: [], xiu: [] };
-let botBets = { tai: 0, xiu: 0 };
-let botCounts = { tai: 0, xiu: 0 };
-let round = 0;
-let time = ROUND_SECONDS;
-let phase = 'betting';
-let recent = [];
-let feed = [];
-
-function addHistory(id, item) {
-  const list = histories.get(id) || [];
-  list.unshift({ ...item, at: new Date().toLocaleTimeString('vi-VN') });
-  histories.set(id, list.slice(0, 30));
-  io.to(id).emit('history', histories.get(id));
-}
-
-function gameData() {
-  return {
-    round, time, phase,
-    realTai: realBets.tai.length,
-    realXiu: realBets.xiu.length,
-    botTai: botCounts.tai,
-    botXiu: botCounts.xiu,
-    totalTai: realBets.tai.reduce((sum, bet) => sum + bet.amount, 0) + botBets.tai,
-    totalXiu: realBets.xiu.reduce((sum, bet) => sum + bet.amount, 0) + botBets.xiu,
-    recent: recent.slice(0, 12),
-    feed: feed.slice(0, 12)
-  };
-}
-
-function broadcast() {
-  io.emit('gameData', gameData());
-}
-
-function botBet() {
-  if (phase !== 'betting') return;
-  const side = Math.random() < 0.5 ? 'tai' : 'xiu';
-  const amount = amounts[Math.floor(Math.random() * amounts.length)];
-  botBets[side] += amount;
-  botCounts[side] += 1;
-  feed.unshift({
-    name: names[Math.floor(Math.random() * names.length)],
-    side, amount
-  });
-  feed = feed.slice(0, 12);
-  broadcast();
-}
-
-function startRound() {
-  round += 1;
-  phase = 'betting';
-  time = ROUND_SECONDS;
-  realBets = { tai: [], xiu: [] };
-  botBets = { tai: 0, xiu: 0 };
-  botCounts = { tai: 0, xiu: 0 };
-  feed = [];
-  for (let i = 0; i < 5; i += 1) botBet();
-  io.emit('roundStart', { round });
-  broadcast();
-}
-
-function finishRound() {
-  phase = 'waiting';
-  time = WAIT_SECONDS;
-  const dice = [1, 2, 3].map(() => Math.floor(Math.random() * 6) + 1);
-  const total = dice.reduce((sum, value) => sum + value, 0);
-  const result = total <= 9 ? 'xiu' : 'tai';
-
-  recent.unshift({ round, result, total, dice });
-  recent = recent.slice(0, 12);
-  io.emit('gameOver', { round, dice, result, total });
-
-  for (const bet of realBets[result]) {
-    const payout = bet.amount * 2;
-    const balance = (wallets.get(bet.id) || 0) + payout;
-    wallets.set(bet.id, balance);
-    io.to(bet.id).emit('wallet', { balance });
-    io.to(bet.id).emit('winGame', {
-      msg: 'Thắng phiên #' + round + ' · +' + payout.toLocaleString('vi-VN') + ' xu'
-    });
-    addHistory(bet.id, { type: 'Thắng cược', amount: payout, detail: 'Phiên #' + round });
-  }
-
-  for (const bet of realBets[result === 'tai' ? 'xiu' : 'tai']) {
-    addHistory(bet.id, { type: 'Thua cược', amount: bet.amount, detail: 'Phiên #' + round });
-  }
-  broadcast();
-}
-
-io.on('connection', (socket) => {
-  wallets.set(socket.id, START_BALANCE);
-  histories.set(socket.id, []);
-  socket.emit('wallet', { balance: START_BALANCE });
-  socket.emit('history', []);
-  socket.emit('gameData', gameData());
-
-  socket.on('pull', (data = {}) => {
-    const side = data.dice;
-    const amount = Number(data.money);
-
-    if (phase !== 'betting') {
-      socket.emit('pull', { status: 'error', error: 'Phiên đã khóa cược' });
-      return;
-    }
-    if (!Number.isSafeInteger(amount) || amount < 1000) {
-      socket.emit('pull', { status: 'error', error: 'Cược tối thiểu 1.000 xu' });
-      return;
-    }
-    if (side !== 'tai' && side !== 'xiu') {
-      socket.emit('pull', { status: 'error', error: 'Lựa chọn không hợp lệ' });
-      return;
-    }
-
-    const balance = wallets.get(socket.id) || 0;
-    if (amount > balance) {
-      socket.emit('pull', { status: 'error', error: 'Bạn không đủ xu' });
-      return;
-    }
-
-    wallets.set(socket.id, balance - amount);
-    const existing = realBets[side].find((bet) => bet.id === socket.id);
-    if (existing) existing.amount += amount;
-    else realBets[side].push({ id: socket.id, amount });
-
-    socket.emit('wallet', { balance: wallets.get(socket.id) });
-    addHistory(socket.id, { type: 'Đặt ' + side.toUpperCase(), amount, detail: 'Phiên #' + round });
-    socket.emit('pull', { status: 'success', message: 'Đặt cược thành công' });
-    broadcast();
-  });
-
-  socket.on('topup', () => {
-    const balance = (wallets.get(socket.id) || 0) + TOPUP_AMOUNT;
-    wallets.set(socket.id, balance);
-    socket.emit('wallet', { balance });
-    addHistory(socket.id, {
-      type: 'Nhận xu ảo', amount: TOPUP_AMOUNT, detail: 'Thưởng trải nghiệm miễn phí'
-    });
-    socket.emit('notice', { message: 'Đã cộng 500.000 xu ảo' });
-  });
-
-  socket.on('disconnect', () => {
-    wallets.delete(socket.id);
-    histories.delete(socket.id);
-  });
-});
-
-server.on('error', (error) => {
-  console.error('HTTP SERVER ERROR:', error);
-  process.exitCode = 1;
-});
-
-server.listen(PORT, '0.0.0.0', () => {
-  console.log('Tai Xiu server ready on port ' + PORT);
-  startRound();
-  setInterval(() => {
-    time -= 1;
-    if (time <= 0) {
-      if (phase === 'betting') finishRound();
-      else startRound();
-    } else {
-      broadcast();
-    }
-  }, 1000);
-  setInterval(botBet, 2600);
-});
+const express=require('express'),http=require('http'),path=require('path'),crypto=require('crypto'),{promisify}=require('util'),{Pool}=require('pg'),socketIo=require('socket.io');
+const scrypt=promisify(crypto.scrypt),app=express(),server=http.createServer(app),io=socketIo(server,{cors:{origin:'*'}}),PORT=Number(process.env.PORT)||3000,SECRET=process.env.AUTH_SECRET||'change-this-secret-before-production';
+const pool=new Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_URL&&process.env.DATABASE_URL.includes('render.com')?{rejectUnauthorized:false}:undefined,max:5});
+app.use(express.json({limit:'20kb'}));app.use(express.static(path.join(__dirname,'www')));app.get('/health',(_q,r)=>r.status(200).send('OK'));app.get('/',(_q,r)=>r.sendFile(path.join(__dirname,'www','index.html')));
+function sign(p){const b=Buffer.from(JSON.stringify(p)).toString('base64url');return b+'.'+crypto.createHmac('sha256',SECRET).update(b).digest('base64url')}
+function verify(t){if(!t||typeof t!=='string')return null;const [b,s]=t.split('.');if(!b||!s)return null;const e=crypto.createHmac('sha256',SECRET).update(b).digest();let a;try{a=Buffer.from(s,'base64url')}catch{return null}if(a.length!==e.length||!crypto.timingSafeEqual(a,e))return null;try{const p=JSON.parse(Buffer.from(b,'base64url').toString());return p.exp>Date.now()&&p.id?p:null}catch{return null}}
+async function hashPass(p,salt){const s=salt||crypto.randomBytes(16).toString('hex');return {salt:s,hash:(await scrypt(p,s,64)).toString('hex')}}
+function auth(req,res,next){const h=req.headers.authorization||'',p=verify(h.startsWith('Bearer ')?h.slice(7):'');if(!p)return res.status(401).json({error:'Phiên đăng nhập hết hạn. Hãy đăng nhập lại.'});req.user=p;next()}
+async function historyFor(id){const q=await pool.query('SELECT type,amount,detail,created_at FROM transactions WHERE user_id=$1 ORDER BY id DESC LIMIT 30',[id]);return q.rows.map(x=>({type:x.type,amount:Number(x.amount),detail:x.detail,at:new Date(x.created_at).toLocaleTimeString('vi-VN')}))}
+app.post('/api/register',async(req,res)=>{try{const u=String(req.body.username||'').trim().toLowerCase(),p=String(req.body.password||'');if(!/^[a-z0-9_]{3,18}$/.test(u))return res.status(400).json({error:'Tên đăng nhập 3–18 ký tự, chỉ gồm chữ thường, số và _.'});if(p.length<6||p.length>72)return res.status(400).json({error:'Mật khẩu cần từ 6 đến 72 ký tự.'});const h=await hashPass(p),q=await pool.query('INSERT INTO players(username,password_salt,password_hash,balance) VALUES($1,$2,$3,10000000) RETURNING id,username,balance',[u,h.salt,h.hash]),user=q.rows[0];await pool.query('INSERT INTO transactions(user_id,type,amount,detail) VALUES($1,$2,$3,$4)',[user.id,'Nhận xu khởi tạo',10000000,'Số dư tài khoản mới']);res.json({token:sign({id:user.id,username:user.username,exp:Date.now()+30*86400000}),user:{id:user.id,username:user.username,balance:Number(user.balance)},history:await historyFor(user.id)})}catch(e){if(e.code==='23505')return res.status(409).json({error:'Tên đăng nhập đã có người sử dụng.'});console.error('REGISTER',e);res.status(500).json({error:'Không tạo được tài khoản. Thử lại sau.'})}});
+app.post('/api/login',async(req,res)=>{try{const u=String(req.body.username||'').trim().toLowerCase(),p=String(req.body.password||''),q=await pool.query('SELECT id,username,password_salt,password_hash,balance FROM players WHERE username=$1',[u]),user=q.rows[0];if(!user)return res.status(401).json({error:'Sai tên đăng nhập hoặc mật khẩu.'});const h=await hashPass(p,user.password_salt),a=Buffer.from(h.hash,'hex'),b=Buffer.from(user.password_hash,'hex');if(a.length!==b.length||!crypto.timingSafeEqual(a,b))return res.status(401).json({error:'Sai tên đăng nhập hoặc mật khẩu.'});res.json({token:sign({id:user.id,username:user.username,exp:Date.now()+30*86400000}),user:{id:user.id,username:user.username,balance:Number(user.balance)},history:await historyFor(user.id)})}catch(e){console.error('LOGIN',e);res.status(500).json({error:'Không đăng nhập được. Thử lại sau.'})}});
+app.get('/api/me',auth,async(req,res)=>{const q=await pool.query('SELECT id,username,balance FROM players WHERE id=$1',[req.user.id]);if(!q.rows[0])return res.status(401).json({error:'Tài khoản không tồn tại.'});res.json({user:{...q.rows[0],balance:Number(q.rows[0].balance)},history:await historyFor(req.user.id)})});
+const ROUND_SECONDS=45,WAIT_SECONDS=8,names=['Minh Anh','Hoàng Long','Gia Huy','Bảo Ngọc','Tuấn Kiệt','Khánh Linh','Đức Anh','Phương Thảo','Quốc Bảo','Hải Đăng','Ngọc Mai','Thanh Tùng','Kim Chi','Anh Khoa','Mỹ Duyên','Nhật Nam'],amounts=[50000,100000,200000,300000,500000,800000,1000000,1500000,2000000];
+let realBets={tai:[],xiu:[]},botBets={tai:0,xiu:0},botCounts={tai:0,xiu:0},round=0,time=ROUND_SECONDS,phase='betting',recent=[],feed=[];
+function gameData(){return {round,time,phase,realTai:realBets.tai.length,realXiu:realBets.xiu.length,botTai:botCounts.tai,botXiu:botCounts.xiu,totalTai:realBets.tai.reduce((s,b)=>s+b.amount,0)+botBets.tai,totalXiu:realBets.xiu.reduce((s,b)=>s+b.amount,0)+botBets.xiu,recent:recent.slice(0,12),feed:feed.slice(0,12)}}
+function broadcast(){io.emit('gameData',gameData())}
+async function wallet(id){const q=await pool.query('SELECT balance FROM players WHERE id=$1',[id]);return q.rows[0]?Number(q.rows[0].balance):0}
+async function addHistory(id,item){await pool.query('INSERT INTO transactions(user_id,type,amount,detail) VALUES($1,$2,$3,$4)',[id,item.type,item.amount,item.detail]);io.to('user:'+id).emit('history',await historyFor(id))}
+function botBet(){if(phase!=='betting')return;const side=Math.random()<.5?'tai':'xiu',amount=amounts[Math.floor(Math.random()*amounts.length)];botBets[side]+=amount;botCounts[side]++;feed.unshift({name:names[Math.floor(Math.random()*names.length)],side,amount});feed=feed.slice(0,12);broadcast()}
+function startRound(){round++;phase='betting';time=ROUND_SECONDS;realBets={tai:[],xiu:[]};botBets={tai:0,xiu:0};botCounts={tai:0,xiu:0};feed=[];for(let i=0;i<5;i++)botBet();io.emit('roundStart',{round});broadcast()}
+async function finishRound(){phase='waiting';time=WAIT_SECONDS;const dice=[1,2,3].map(()=>Math.floor(Math.random()*6)+1),total=dice.reduce((s,v)=>s+v,0),result=total<=9?'xiu':'tai';recent.unshift({round,result,total,dice});recent=recent.slice(0,12);io.emit('gameOver',{round,dice,result,total});for(const b of realBets[result]){const payout=b.amount*2;await pool.query('UPDATE players SET balance=balance+$1 WHERE id=$2',[payout,b.userId]);io.to('user:'+b.userId).emit('wallet',{balance:await wallet(b.userId)});io.to('user:'+b.userId).emit('winGame',{msg:'Thắng phiên #'+round+' · +'+payout.toLocaleString('vi-VN')+' xu'});await addHistory(b.userId,{type:'Thắng cược',amount:payout,detail:'Phiên #'+round})}for(const b of realBets[result==='tai'?'xiu':'tai'])await addHistory(b.userId,{type:'Thua cược',amount:b.amount,detail:'Phiên #'+round});broadcast()}
+io.use(async(s,n)=>{try{const p=verify(s.handshake.auth&&s.handshake.auth.token);if(!p)return n(new Error('Vui lòng đăng nhập để vào bàn chơi.'));const q=await pool.query('SELECT id,username FROM players WHERE id=$1',[p.id]);if(!q.rows[0])return n(new Error('Tài khoản không tồn tại.'));s.user=q.rows[0];n()}catch(e){n(new Error('Không kết nối được dữ liệu tài khoản.'))}});
+io.on('connection',async s=>{const id=s.user.id;s.join('user:'+id);s.emit('wallet',{balance:await wallet(id)});s.emit('history',await historyFor(id));s.emit('gameData',gameData());s.on('pull',async d=>{const side=d.dice,amount=Number(d.money);if(phase!=='betting')return s.emit('pull',{status:'error',error:'Phiên đã khóa cược'});if(!Number.isSafeInteger(amount)||amount<1000)return s.emit('pull',{status:'error',error:'Cược tối thiểu 1.000 xu'});if(side!=='tai'&&side!=='xiu')return s.emit('pull',{status:'error',error:'Lựa chọn không hợp lệ'});const c=await pool.connect();try{await c.query('BEGIN');const q=await c.query('SELECT balance FROM players WHERE id=$1 FOR UPDATE',[id]);if(!q.rows[0]||Number(q.rows[0].balance)<amount){await c.query('ROLLBACK');return s.emit('pull',{status:'error',error:'Bạn không đủ xu'})}await c.query('UPDATE players SET balance=balance-$1 WHERE id=$2',[amount,id]);await c.query('INSERT INTO transactions(user_id,type,amount,detail) VALUES($1,$2,$3,$4)',[id,'Đặt '+side.toUpperCase(),amount,'Phiên #'+round]);await c.query('COMMIT');const old=realBets[side].find(b=>b.userId===id);if(old)old.amount+=amount;else realBets[side].push({userId:id,amount});s.emit('wallet',{balance:await wallet(id)});s.emit('history',await historyFor(id));s.emit('pull',{status:'success',message:'Đặt cược thành công'});broadcast()}catch(e){await c.query('ROLLBACK');console.error('BET',e);s.emit('pull',{status:'error',error:'Lỗi lưu cược, thử lại.'})}finally{c.release()}});s.on('topup',async()=>{await pool.query('UPDATE players SET balance=balance+500000 WHERE id=$1',[id]);s.emit('wallet',{balance:await wallet(id)});await addHistory(id,{type:'Nhận xu ảo',amount:500000,detail:'Thưởng trải nghiệm miễn phí'});s.emit('notice',{message:'Đã cộng 500.000 xu ảo'})})});
+async function boot(){await pool.query('CREATE TABLE IF NOT EXISTS players(id BIGSERIAL PRIMARY KEY,username VARCHAR(18) UNIQUE NOT NULL,password_salt TEXT NOT NULL,password_hash TEXT NOT NULL,balance BIGINT NOT NULL DEFAULT 10000000,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');await pool.query('CREATE TABLE IF NOT EXISTS transactions(id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,type TEXT NOT NULL,amount BIGINT NOT NULL,detail TEXT NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');server.listen(PORT,'0.0.0.0',()=>{console.log('Tai Xiu server ready on port '+PORT);startRound();setInterval(()=>{time--;if(time<=0){if(phase==='betting')finishRound().catch(console.error);else startRound()}else broadcast()},1000);setInterval(botBet,2600)})}
+server.on('error',e=>{console.error('HTTP SERVER ERROR:',e);process.exitCode=1});
+boot().catch(e=>{console.error('DATABASE STARTUP FAILED:',e);process.exit(1)});
