@@ -1,192 +1,105 @@
-var express = require('express');
-var app = express();
+const express = require('express');
+const app = express();
 app.use(express.static('./www'));
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
+server.listen(process.env.PORT || 3000, () => console.log('Tai Xiu server ready'));
 
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
+const START_BALANCE = 10000000;
+const TOPUP_AMOUNT = 500000;
+const ROUND_SECONDS = 45;
+const WAIT_SECONDS = 8;
+const names = ['Minh Anh','Hoàng Long','Gia Huy','Bảo Ngọc','Tuấn Kiệt','Khánh Linh','Đức Anh','Phương Thảo','Quốc Bảo','Hải Đăng','Ngọc Mai','Thanh Tùng','Kim Chi','Anh Khoa','Mỹ Duyên','Nhật Nam'];
+const amounts = [50000,100000,200000,300000,500000,800000,1000000,1500000,2000000];
+const wallets = {};
+const histories = {};
+const realBets = {tai:[],xiu:[]};
+let round = 0, time = ROUND_SECONDS, phase = 'betting';
+let botBets = {tai:0,xiu:0}, botCounts = {tai:0,xiu:0};
+let recent = [], feed = [];
 
-// port
-server.listen(process.env.PORT || 3000, function(){
-	console.log('server dang chay....');
-});
-
-// tài xỉu
-
-
-var Taixiu = function(){
-
-    // cài đặt
-    this.idPhien             = 0;  // id phiên đặt
-    this.timeDatCuoc         = 60; // thời gian đặt cược = 60s;
-    this.timechophienmoi     = 10; // thời gian chờ phiên mới = 10s;
-    this.soNguoiChonTai      = 0;  // Số người đặt tài
-    this.soNguoiChonXiu      = 0;  // Số người đặt xỉu
-    this.tongTienDatTai      = 0;  // tổng tiền đặt tài
-    this.tongTienDatXiu      = 0;  // tổng tiền đặt xỉu
-    this.time                = this.timeDatCuoc;  // thời gian
-    this.coTheDatCuoc        = true; // có thể đặt hay không
-    this.idChonTai           = []; // array id chọn tài
-    this.idChonXiu           = []; // array id chọn xỉu
-    this.ketQua              = ''; // kết quá
-    this.wallets             = {}; // số dư xu ảo theo phiên kết nối
-
-
-    // game bắt đầu
-    this.gameStart = function(){
-        // code
-        seft = this;
-        seft.idPhien ++;
-        seft.coTheDatCuoc        = true // có thể đặt
-        seft.soNguoiChonTai      = 0;  // Số người đặt tài
-        seft.soNguoiChonXiu      = 0;  // Số người đặt xỉu
-        seft.tongTienDatTai      = 0;  // tổng tiền đặt tài
-        seft.tongTienDatXiu      = 0;  // tổng tiền đặt xỉu
-        seft.idChonTai           = []; // array id chọn tài
-        seft.idChonXiu           = []; // array id chọn xỉu
-        seft.time = seft.timeDatCuoc;
-        console.log('newgame');
-        io.sockets.emit('gameStart', this.ketQua);
-        loopAGame = setInterval(function() {              
-            seft.time--;
-            io.sockets.emit('gameData', { 
-                idGame        : seft.idPhien,
-                soNguoiChonTai: seft.soNguoiChonTai, 
-                soNguoiChonXiu: seft.soNguoiChonXiu, 
-                tongTienDatTai: seft.tongTienDatTai, 
-                tongTienDatXiu: seft.tongTienDatXiu, 
-                soNguoiChonTai: seft.soNguoiChonTai, 
-                time          : seft.time, 
-            });
-            ketqua = seft.gameRandomResult();
-            console.log( 'idGame:' + seft.idPhien);
-            console.log( 'soNguoiChonTai:' + seft.soNguoiChonTai);
-            console.log( 'soNguoiChonXiu:' + seft.soNguoiChonXiu);
-            console.log( 'tongTienDatTai:' + seft.tongTienDatTai);
-            console.log( 'tongTienDatXiu:' + seft.tongTienDatXiu);
-            console.log( 'time:' + seft.time);
-            if (seft.time == 0){
-                clearInterval(loopAGame);
-                seft.gameOver();
-            }
-        }, 1000);
-        // console.log( 'tongTienDatXiu:' + JSON.stringify(ketqua));
-
-        // console.log();
-    };
-    // game kết thúc
-    this.gameOver = function(){
-        seft = this;
-        seft.coTheDatCuoc  = false // không thể đặt
-        seft.time = seft.timechophienmoi;
-        this.ketQua =  seft.gameRandomResult();
-        io.sockets.emit('gameOver', this.ketQua);
-        console.log(JSON.stringify(this.ketQua));
-        idWin = this.ketQua.result == 'tai' ? seft.idChonTai : seft.idChonXiu;
-        idWin.forEach((data)=>{
-            var payout = data.tien * 2; // trả lại cược + thưởng bằng tiền cược
-            seft.wallets[data.id] = (seft.wallets[data.id] || 0) + payout;
-            io.to(data.id).emit('wallet', { balance: seft.wallets[data.id] });
-            io.to(data.id).emit('winGame', {
-                msg: 'Bạn thắng! Nhận ' + payout.toLocaleString('vi-VN') + ' xu'
-            });
-        });
-        loopAGame = setInterval(function() {   
-            seft.time --;   
-            console.log(seft.time);
-            io.sockets.emit('gameData', { 
-                idGame        : seft.idPhien,
-                soNguoiChonTai: seft.soNguoiChonTai, 
-                soNguoiChonXiu: seft.soNguoiChonXiu, 
-                tongTienDatTai: seft.tongTienDatTai, 
-                tongTienDatXiu: seft.tongTienDatXiu, 
-                soNguoiChonTai: seft.soNguoiChonTai, 
-                time          : seft.time, 
-            });
-            if (seft.time == 0){
-                clearInterval(loopAGame);
-                seft.gameStart();
-            }
-        }, 1000);
-    };
-    // đặt cược
-    this.putMoney = function(id,cau,tien){
-        tien = Number(tien);
-        if (!Number.isSafeInteger(tien) || tien <= 0 || (cau !== 'tai' && cau !== 'xiu')) {
-            return { status: 'error', error: 'Số xu cược không hợp lệ' };
-        }
-        if (this.wallets[id] === undefined) this.wallets[id] = 10000000;
-        if (tien > this.wallets[id]) {
-            return { status: 'error', error: 'Bạn không đủ xu để đặt cược' };
-        }
-        // nếu đang trong thời gian chờ (coTheDatCuoc == false)
-        if (this.coTheDatCuoc == false){
-            return {
-                status  : 'error',
-                error   : 'Không thể đặt, vui lòng chờ giây lát'
-            };
-        }
-        this.wallets[id] -= tien;
-        io.to(id).emit('wallet', { balance: this.wallets[id] });
-        if(cau == 'tai'){
-            // thêm tiền vào tổng số tiền đặt tài
-            this.tongTienDatTai += tien;
-            // thêm id vào list id array nếu chưa có
-            if(!this.idChonTai.find(x => x.id === id)){ 
-                this.idChonTai.push({
-                    id   : id,
-                    cau  : 'tai',
-                    tien : tien
-                });
-                this.soNguoiChonTai ++;
-            }else{
-                // nếu tìm thấy thì cộng thêm tiền vô
-                this.idChonTai.find(x => x.id === id).tien += tien;
-            }
-            
-        }else if(cau == 'xiu'){
-            // thêm tiền vào tổng số tiền đặt tài
-            this.tongTienDatXiu += tien;
-            // thêm id vào list id array nếu chưa có
-            if(!this.idChonXiu.find(x => x.id === id)){ 
-                this.idChonXiu.push({
-                    id   : id,
-                    cau  : 'xiu',
-                    tien : tien
-                });
-                this.soNguoiChonXiu ++;
-            }else{
-                // nếu tìm thấy thì cộng thêm tiền vô
-                this.idChonXiu.find(x => x.id === id).tien += tien;
-            }
-        }
-        return {
-            status : 'success'
-        }
-    }
-    // random kết quả
-    this.gameRandomResult = function(){
-        dice1 = Math.floor(1 + Math.random()*(6));
-        dice2 = Math.floor(1 + Math.random()*(6));
-        dice3 = Math.floor(1 + Math.random()*(6));
-        return {
-            dice1    : dice1,
-            dice2    : dice2,
-            dice3    : dice3,
-            result  : dice1 + dice2 + dice3 <= 9 ? 'xiu' : 'tai'
-        };
-    }
-    
+function fmtData() {
+  return {round,time,phase,realTai:realBets.tai.length,realXiu:realBets.xiu.length,
+    botTai:botCounts.tai,botXiu:botCounts.xiu,
+    totalTai:realBets.tai.reduce((s,b)=>s+b.amount,0)+botBets.tai,
+    totalXiu:realBets.xiu.reduce((s,b)=>s+b.amount,0)+botBets.xiu,
+    recent:recent.slice(0,12), feed:feed.slice(0,8)};
 }
-
-tx = new Taixiu();
-
-io.on('connection', function (socket) {
-    tx.wallets[socket.id] = 10000000;
-    socket.emit('wallet', { balance: tx.wallets[socket.id] });
-    socket.on('disconnect', function () { delete tx.wallets[socket.id]; });
-    socket.on('pull', function (data) {
-        msg = tx.putMoney(data.id,data.dice,data.money);
-        socket.emit('pull', msg);
-    });
+function pushHistory(id,item) {
+  histories[id] = histories[id] || [];
+  histories[id].unshift({...item,at:new Date().toLocaleTimeString('vi-VN')});
+  histories[id] = histories[id].slice(0,30);
+  io.to(id).emit('history',histories[id]);
+}
+function broadcast() { io.sockets.emit('gameData',fmtData()); }
+function botBet() {
+  if(phase!=='betting') return;
+  const side=Math.random()<0.5?'tai':'xiu';
+  const amount=amounts[Math.floor(Math.random()*amounts.length)];
+  botBets[side]+=amount; botCounts[side]++;
+  const item={name:names[Math.floor(Math.random()*names.length)],side,amount};
+  feed.unshift(item); feed=feed.slice(0,12);
+  broadcast();
+}
+function startRound() {
+  round++; phase='betting'; time=ROUND_SECONDS;
+  realBets={tai:[],xiu:[]}; botBets={tai:0,xiu:0}; botCounts={tai:0,xiu:0}; feed=[];
+  for(let i=0;i<5;i++) botBet();
+  io.sockets.emit('roundStart',{round}); broadcast();
+}
+function finishRound() {
+  phase='waiting'; time=WAIT_SECONDS;
+  const dice=[1,2,3].map(()=>Math.floor(Math.random()*6)+1);
+  const total=dice.reduce((a,b)=>a+b,0);
+  const result=total<=9?'xiu':'tai';
+  recent.unshift({round,result,total,dice}); recent=recent.slice(0,12);
+  io.sockets.emit('gameOver',{round,dice,result,total});
+  realBets[result].forEach(b=>{
+    const payout=b.amount*2;
+    wallets[b.id]=(wallets[b.id]||0)+payout;
+    io.to(b.id).emit('wallet',{balance:wallets[b.id]});
+    io.to(b.id).emit('winGame',{msg:'Thắng phiên #'+round+' · +'+payout.toLocaleString('vi-VN')+' xu'});
+    pushHistory(b.id,{type:'Thắng cược',amount:payout,detail:'Phiên #'+round});
+  });
+  Object.keys(wallets).forEach(id=>{
+    const lost=realBets[result==='tai'?'xiu':'tai'].find(b=>b.id===id);
+    if(lost) pushHistory(id,{type:'Thua cược',amount:lost.amount,detail:'Phiên #'+round});
+  });
+  broadcast();
+}
+io.on('connection',socket=>{
+  wallets[socket.id]=START_BALANCE; histories[socket.id]=[];
+  socket.emit('wallet',{balance:wallets[socket.id]});
+  socket.emit('history',histories[socket.id]);
+  socket.emit('gameData',fmtData());
+  socket.on('pull',data=>{
+    const side=data&&data.dice, amount=Number(data&&data.money);
+    if(phase!=='betting') return socket.emit('pull',{status:'error',error:'Phiên đã khóa cược'});
+    if(!Number.isSafeInteger(amount)||amount<1000) return socket.emit('pull',{status:'error',error:'Cược tối thiểu 1.000 xu'});
+    if(side!=='tai'&&side!=='xiu') return socket.emit('pull',{status:'error',error:'Lựa chọn không hợp lệ'});
+    if(amount>wallets[socket.id]) return socket.emit('pull',{status:'error',error:'Bạn không đủ xu'});
+    wallets[socket.id]-=amount;
+    const existing=realBets[side].find(b=>b.id===socket.id);
+    if(existing) existing.amount+=amount; else realBets[side].push({id:socket.id,amount});
+    socket.emit('wallet',{balance:wallets[socket.id]});
+    pushHistory(socket.id,{type:'Đặt '+side.toUpperCase(),amount,detail:'Phiên #'+round});
+    socket.emit('pull',{status:'success',message:'Đặt cược thành công'});
+    broadcast();
+  });
+  socket.on('topup',()=>{
+    wallets[socket.id]=(wallets[socket.id]||0)+TOPUP_AMOUNT;
+    socket.emit('wallet',{balance:wallets[socket.id]});
+    pushHistory(socket.id,{type:'Nhận xu ảo',amount:TOPUP_AMOUNT,detail:'Thưởng trải nghiệm miễn phí'});
+    socket.emit('notice',{message:'Đã cộng 500.000 xu ảo'});
+  });
+  socket.on('disconnect',()=>{delete wallets[socket.id];delete histories[socket.id];});
 });
-tx.gameStart();
+startRound();
+setInterval(()=>{
+  time--;
+  if(time<=0){
+    if(phase==='betting') finishRound();
+    else startRound();
+  } else broadcast();
+},1000);
+setInterval(botBet,2600);
