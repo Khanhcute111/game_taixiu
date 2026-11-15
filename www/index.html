@@ -73,7 +73,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 <section class="card section historycard"><div class="sectionhead">LỊCH SỬ GIAO DỊCH <span class="tag">VÍ CỦA BẠN</span></div><div id="history" class="history"><div class="empty">Chưa phát sinh giao dịch</div></div></section>
 <footer>PHÒNG CHƠI MÔ PHỎNG · XU ẢO · NGƯỜI CHƠI MÁY ĐƯỢC GHI RÕ</footer></main><div class="toast" id="notice"></div>
 <script src="/socket.io/socket.io.js"></script><script>
-const socket=io({autoConnect:false,auth:{token:localStorage.getItem("tx_token")||""}});let locked=false;const $=id=>document.getElementById(id);let toastTimer;
+const socket=io({autoConnect:false,query:{token:localStorage.getItem("tx_token")||""}});let locked=false;const $=id=>document.getElementById(id);let toastTimer;
 function money(n){return Number(n||0).toLocaleString('vi-VN')+' xu'}
 function toast(msg){$('notice').textContent=msg;$('notice').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('notice').classList.remove('show'),2500)}
 function place(side){const amount=Number($('amount').value);if(!Number.isSafeInteger(amount)||amount<1000){toast('Vui lòng nhập ít nhất 1.000 xu');return}if(locked){toast('Phiên đã khóa cược, chờ phiên mới nhé');return}socket.emit('pull',{dice:side,money:amount})}
@@ -116,7 +116,7 @@ async function authRequest(){
  finally{$('authSubmit').disabled=false}
 }
 $('authSubmit').onclick=authRequest;$('authPass').addEventListener('keydown',e=>{if(e.key==='Enter')authRequest()});
-function connectGame(){socket.auth={token:localStorage.getItem('tx_token')||''};if(!socket.connected)socket.connect()}
+function connectGame(){socket.io.opts.query={token:localStorage.getItem('tx_token')||''};if(!socket.connected)socket.connect()}
 $('logout').onclick=()=>{localStorage.removeItem('tx_token');localStorage.removeItem('tx_username');socket.disconnect();$('authGate').classList.remove('hidden');authTab('login');$('authPass').value='';$('authError').textContent='Bạn đã đăng xuất.'};
 (async()=>{const token=localStorage.getItem('tx_token');if(!token){$('authGate').classList.remove('hidden');return}try{const r=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw new Error('login');const d=await r.json();$('balance').textContent=Number(d.user.balance).toLocaleString('vi-VN');$('history').innerHTML=d.history.length?d.history.map(x=>'<div class="histrow"><div><b>'+x.type+'</b><div class="muted">'+x.detail+' · '+x.at+'</div></div><span class="money">'+money(x.amount)+'</span></div>').join(''):'<div class="empty">Chưa phát sinh giao dịch</div>';$('authGate').classList.add('hidden');connectGame()}catch(e){localStorage.removeItem('tx_token');$('authGate').classList.remove('hidden')}})();
 
