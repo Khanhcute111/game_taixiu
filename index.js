@@ -1,11 +1,11 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
-const { Server } = require('socket.io');
+const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = socketIo(server, { cors: { origin: '*' } });
 
 const WEB_DIR = path.join(__dirname, 'www');
 app.use(express.static(WEB_DIR));
